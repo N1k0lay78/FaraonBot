@@ -13,7 +13,7 @@ class MyClient(discord.Client):
     async def on_message(self, message):
         if message.author.id != self.user.id:
             if message.channel.id != 1067359358452777020:
-                if message.author.name in ["Reben", "yaimel", "Ye Cuba", "-SKT-Thomas"]:
+                if message.author.name in ["Reben", "yaimel", "Ye Cuba", "-SKT-Thomas", "Dx_WITHEFIRE_xD"]:
                     ans = self.translator.translate(message.content, dest="ru").text
                     await message.reply(content=ans)
                 else:
@@ -26,6 +26,7 @@ class MyClient(discord.Client):
                 else:
                     ans = self.translator.translate(message.content, dest="ru").text
                     await message.reply(content=ans)
+
 
 if __name__ == '__main__':
     intents = discord.Intents.default()
