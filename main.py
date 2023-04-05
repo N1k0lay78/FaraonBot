@@ -7,33 +7,90 @@ TOKEN = ""
 
 class MyClient(discord.Client):
     async def on_ready(self):
+        self.channels = {}
+        self.chat_members = {}
         self.translator = Translator()
+        self.load_channels()
+        self.load_chat_members()
         print('READY')
 
+    def load_channels(self):
+        with open("channels.stg", "r") as f:
+            for line in f.readlines():
+                # no - no translate, au - auto translate mode, ru - translate to ru, es - translate to es
+                self.channels[int(line.split()[0])] = line.split()[1]
+
+    def load_chat_members(self):
+        with open("users.stg", "r") as f:
+            for line in f.readlines():
+                # no - no translate, ru - to ru, es - to es
+                self.chat_members[int(line.split()[0])] = line.split()[1]
+
+    def add_chat_member(self, id):
+        self.chat_members[id] = 'es'
+        self.save_chat_member()
+
+    def save_chat_member(self):
+        with open("users.stg", 'w') as f:
+            f.writelines(map(lambda x: f"{x[0]} {x[1]}\n", self.chat_members.items()))
+
+    def add_channel(self, id):
+        self.channels[id] = 'au'
+        self.save_channel()
+
+    def save_channel(self):
+        with open("channels.stg", 'w') as f:
+            f.writelines(map(lambda x: f"{x[0]} {x[1]}\n", self.channels.items()))
+
     async def on_message(self, message):
-        print(message.author.id, message.author.name, message.content, message.channel.id)
-        if message.author.id != self.user.id and message.channel.id not in [1087874636307517491, 1071141318862061598]:
+        if message.author.id not in self.chat_members:
+            self.add_chat_member(message.author.id)
+        if message.channel.id not in self.channels:
+            self.add_channel(message.channel.id)
+        # <@&1072787215140270160> - admin
+        # check admin
+        # any(map(lambda role: role.id == 1072787215140270160, message.author.roles))
+        print(self.chat_members[message.author.id], self.channels[message.channel.id], message.content)
+        if message.author.id != self.user.id:  # and message.channel.id not in [1087874636307517491, 1071141318862061598]:
             if message.author.id == 1087790399503990785:
                 if "destroyed your" in message.content:
                     await message.reply(content="<@925109931122786395>, <@342956494389641216>, <@430382528231112705>, <@829552769009844254>, <@670683687897006103>, <@390963619418079233>, нас фобнули! ¡estamos bajo ataque!")
-            else:
-                if ((message.content.count('j') == len(message.content) or message.content in [".", '/', '?', '&', ')', '('] or
-                        message.content.startswith('https:'))):
-                    None
-                elif message.channel.id != 1067359358452777020:
-                    if message.author.name in ["Reben", "yaimel", "Ye Cuba", "-SKT-Thomas", "Dx_WITHEFIRE_xD"]:
-                        ans = self.translator.translate(message.content, dest="ru").text
-                        await message.reply(content=ans)
+            if ((message.content.lower().count('j') == len(message.content) or message.content in [".", '/', '?', '&', ')', '(', "ok", "Ok", "OK", "ок", "Ок", "ОК"] or
+                    message.content.startswith('https:'))):
+                None
+            elif message.content.startswith('.translate') and any(map(lambda role: role.id == 1072787215140270160, message.author.roles)):
+                args = message.content.split()[1:]
+                if len(args) == 1:
+                    if args[0] in ['ru', 'en', 'es', 'no', 'au']:
+                        self.channels[message.channel.id] = args[0]
+                        self.save_channel()
                     else:
-                        ans = self.translator.translate(message.content, dest="es").text
-                        await message.reply(content=ans)
-                else:
-                    if self.translator.detect(message.content).lang == 'ru':
-                        ans = self.translator.translate(message.content, dest="es").text
-                        await message.reply(content=ans)
+                        await message.reply(content='доступные языки: ru, en, es, no - не переводить, au - автоматический выбор языка\nidiomas disponibles: ru, en, es, no - no traducir, au - selección automática de idioma')
+                elif len(args) == 2:
+                    if args[0][2:-1].isdigit() and args[1] in ['ru', 'en', 'es', 'no']:
+                        self.chat_members[int(args[0][2:-1])] = args[1]
+                        self.save_chat_member()
                     else:
-                        ans = self.translator.translate(message.content, dest="ru").text
-                        await message.reply(content=ans)
+                        await message.reply(content='доступные языки: ru, en, es, no - не переводить\nidiomas disponibles: ru, en, es, no - no traducir')
+            elif message.content.startswith('.help') and any(map(lambda role: role.id == 1072787215140270160, message.author.roles)):
+                await message.reply(
+                    content=""".translate @user lang
+выбор языка пользователя
+доступные языки: ru, en, es, no (не переводить)
+selección de idioma del usuario
+idiomas disponibles: ru, en, es, no (no traducir)
+
+.translate lang
+выбор языка канала
+доступные языки: ru, en, es, no (не переводить), au (автоматический выбор языка)
+selección de idioma del canal
+idiomas disponibles: ru, en, es, no (no traducir), au (selección automática de idioma)""")
+            elif self.channels[message.channel.id] == "au" and self.chat_members[message.author.id] != 'no':
+                ans = self.translator.translate(message.content, dest=self.chat_members[message.author.id]).text
+                await message.reply(content=ans)
+            elif self.channels[message.channel.id] != "no":
+                ans = self.translator.translate(message.content, dest=self.channels[message.channel.id]).text
+                await message.reply(content=ans)
 
 
 if __name__ == '__main__':
