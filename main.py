@@ -53,7 +53,7 @@ class MyClient(discord.Client):
         print(self.chat_members[message.author.id], self.channels[message.channel.id], message.content)
         if message.author.id != self.user.id:  # and message.channel.id not in [1087874636307517491, 1071141318862061598]:
             if message.author.id == 1128752754911887420:
-                if "destroyed your" in message.content and ("Metal" in message.content or "Tek" in message.content):
+                if "destroyed your 'Metal" in message.content or "destroyed your 'Tek" in message.content or "destroyed your 'Heavy" in message.content:
                     await message.reply(content="<@&1093083549915168832>, нас фобнули! ¡estamos bajo ataque!")
             if ((message.content.lower().count('j') == len(message.content) or message.content in [".", '/', '?', '&', ')', '(', "ok", "Ok", "OK", "ок", "Ок", "ОК"] or
                     message.content.startswith('https:'))):
